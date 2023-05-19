@@ -10,25 +10,13 @@ defmodule JokersWeb.Live.Home do
       JokersWeb.Endpoint.subscribe(topic)
     end
 
-    joke = Jokers.Jokes.Joke |> Ecto.Query.first |> Jokers.Repo.one
     jokes = Jokers.Jokes.Joke |> Jokers.Repo.all(limit: 2)
 
-    socket = assign(socket, :joke, joke)
+    socket = socket
       |>assign(:topic, topic)
       |>assign(:jokes, jokes)
 
       {:ok, socket}
-  end
-
-  def handle_event("increment", _params, socket) do
-    joke = socket.assigns.joke
-
-    {:ok, joke} = Jokers.Jokes.update_joke(joke, %{likes: joke.likes + 1})
-
-    state = %{joke: joke}
-    JokersWeb.Endpoint.broadcast(socket.assigns.topic, "increment_joke", state)
-
-    {:noreply, assign(socket, joke: joke)}
   end
 
   def handle_event("like_joke", %{"joke_id" => joke_id} = params, socket) do

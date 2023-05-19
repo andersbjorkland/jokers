@@ -53,7 +53,7 @@ defmodule JokersWeb.JokeController do
 
     state = %{joke: joke_updated}
 
-    JokersWeb.Endpoint.broadcast(@topic, "increment_joke", state)
+    JokersWeb.Endpoint.broadcast(@topic, "update_joke", state)
 
     with {:ok, joke_updated}  do
       render(conn, :show, joke: joke_updated)
