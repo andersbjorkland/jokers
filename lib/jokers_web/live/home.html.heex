@@ -1,0 +1,18 @@
+<div>
+    <div>
+        <p><%= @joke.text %></p>
+        <p><%= @joke.likes %></p>
+        <button phx-click="increment">Like</button>
+    </div>
+    <div class="flex flex-col gap-4">
+        <%= for joke <- @jokes do %>
+            <div id={to_string(joke.id)} class="flex gap-2">
+                <p><%= joke.text %></p><div><%= joke.likes %></div>
+                <button 
+                    phx-click="like_joke"
+                    phx-value-joke_id={joke.id}
+                >Like</button>
+            </div>
+        <% end %>
+    </div>
+</div>
