@@ -16,44 +16,48 @@ defmodule JokersWeb.Live.Home do
       |>assign(:topic, topic)
       |>assign(:jokes, jokes)
 
-      {:ok, socket}
+    {:ok, socket}
   end
 
-  def handle_event("like_joke", %{"joke_id" => joke_id} = params, socket) do
-    Logger.info(params)
+  def handle_event("like_joke", %{"joke_id" => joke_id} = _params, socket) do
+
     {joke_id, _} = Integer.parse(joke_id)
     joke = Jokers.Jokes.Joke |> Jokers.Repo.get(joke_id)
 
-    {:ok, joke} = Jokers.Jokes.update_joke(joke, %{likes: joke.likes + 1})
+    socket_jokes = socket.assigns.jokes
+    [socket_joke | _rest ] = Enum.filter(socket_jokes, &(&1.id == joke_id))
 
-    state = %{joke: joke}
+    likes = if (socket_joke.has_liked) do
+      joke.likes - 1
+    else
+      joke.likes + 1
+    end
+
+    {:ok, joke} = Jokers.Jokes.update_joke(joke, %{likes: likes })
+    state = %{joke: %{socket_joke | likes: joke.likes}, sender: self()}
+
     JokersWeb.Endpoint.broadcast(socket.assigns.topic, "update_joke", state)
 
-    jokes = socket.assigns.jokes
-      |> Enum.map(fn
-        %Jokers.Jokes.Joke{id: ^joke_id} -> joke
-        element -> element
-      end)
+    {:noreply, socket}
+  end
 
+  def handle_info(%{topic: "jokes", event: "update_joke", payload: %{joke: joke, sender: sender}}, socket) do
+    joke = if (sender == self()) do
+      %{joke | has_liked: !joke.has_liked }
+    else
+      [socket_joke | _rest ] = Enum.filter(socket.assigns.jokes, &(&1.id == joke.id))
+      %{joke | has_liked: socket_joke.has_liked }
+    end
+
+    joke_id = joke.id
+
+    jokes =
+      socket.assigns.jokes
+        |> Enum.map(fn
+          %Jokers.Jokes.Joke{id: ^joke_id} -> joke
+          element -> element
+        end)
 
     {:noreply, assign(socket, jokes: jokes)}
-  end
-
-  def handle_info(%{event: "update_joke", payload: %{joke: joke}}, socket) do
-    joke_id = joke.id
-    jokes = socket.assigns.jokes
-      |> Enum.map(fn
-        %Jokers.Jokes.Joke{id: ^joke_id} -> joke
-        element -> element
-      end)
-
-      {:noreply, assign(socket, jokes: jokes)}
-  end
-
-  def handle_info(%{event: "increment_joke", payload: %{joke: joke}}, socket) do
-    Logger.info(joke: joke)
-    socket = socket
-      |> assign(:joke, joke)
-    {:noreply, socket}
   end
 end
