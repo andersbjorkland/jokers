@@ -6,7 +6,11 @@
                 <button 
                     phx-click="like_joke"
                     phx-value-joke_id={joke.id}
-                >Like</button>
+                ><Heroicons.LiveView.icon name="face-smile" type="outline" class={
+                    (if joke.has_liked,
+                        do: "h-5 w-5 text-green-800 ",
+                        else: "h-5 w-5 text-slate-500")
+                } /></button>
             </div>
         <% end %>
     </div>
