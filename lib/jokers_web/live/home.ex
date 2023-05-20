@@ -36,17 +36,62 @@ defmodule JokersWeb.Live.Home do
     {:ok, joke} = Jokers.Jokes.update_joke(joke, %{likes: likes })
     state = %{joke: %{socket_joke | likes: joke.likes}, sender: self()}
 
-    JokersWeb.Endpoint.broadcast(socket.assigns.topic, "update_joke", state)
+    JokersWeb.Endpoint.broadcast(socket.assigns.topic, "update_like", state)
 
     {:noreply, socket}
   end
 
-  def handle_info(%{topic: "jokes", event: "update_joke", payload: %{joke: joke, sender: sender}}, socket) do
+  def handle_event("dislike_joke", %{"joke_id" => joke_id} = _params, socket) do
+
+    {joke_id, _} = Integer.parse(joke_id)
+    joke = Jokers.Jokes.Joke |> Jokers.Repo.get(joke_id)
+
+    socket_jokes = socket.assigns.jokes
+    [socket_joke | _rest ] = Enum.filter(socket_jokes, &(&1.id == joke_id))
+
+    dislikes = if (socket_joke.has_disliked) do
+      joke.dislikes - 1
+    else
+      joke.dislikes + 1
+    end
+
+    {:ok, joke} = Jokers.Jokes.update_joke(joke, %{dislikes: dislikes })
+    state = %{
+      joke: %{socket_joke | dislikes: joke.dislikes},
+      sender: self()
+    }
+
+    JokersWeb.Endpoint.broadcast(socket.assigns.topic, "update_dislike", state)
+
+    {:noreply, socket}
+  end
+
+  def handle_info(%{topic: "jokes", event: "update_like", payload: %{joke: joke, sender: sender}}, socket) do
     joke = if (sender == self()) do
       %{joke | has_liked: !joke.has_liked }
     else
       [socket_joke | _rest ] = Enum.filter(socket.assigns.jokes, &(&1.id == joke.id))
       %{joke | has_liked: socket_joke.has_liked }
+    end
+
+    joke_id = joke.id
+
+    jokes =
+      socket.assigns.jokes
+        |> Enum.map(fn
+          %Jokers.Jokes.Joke{id: ^joke_id} -> joke
+          element -> element
+        end)
+
+    {:noreply, assign(socket, jokes: jokes)}
+  end
+
+  def handle_info(%{topic: "jokes", event: "update_dislike", payload: %{joke: joke, sender: sender}}, socket) do
+    joke = if (sender == self()) do
+      %{joke | has_disliked: !joke.has_disliked }
+    else
+      [socket_joke | _rest ] = Enum.filter(socket.assigns.jokes, &(&1.id == joke.id))
+      %{joke | has_disliked: socket_joke.has_disliked }
     end
 
     joke_id = joke.id

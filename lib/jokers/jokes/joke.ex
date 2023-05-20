@@ -7,6 +7,7 @@ defmodule Jokers.Jokes.Joke do
     field :likes, :integer, default: 0
     field :text, :string
     field :has_liked, :boolean, virtual: true, default: false
+    field :has_disliked, :boolean, virtual: true, default: false
 
     timestamps()
   end

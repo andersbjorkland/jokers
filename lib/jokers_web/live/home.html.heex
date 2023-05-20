@@ -1,16 +1,32 @@
 <div>
     <div class="flex flex-col gap-4">
         <%= for joke <- @jokes do %>
-            <div id={to_string(joke.id)} class="flex gap-2">
-                <p><%= joke.text %></p><div><%= joke.likes %></div>
-                <button 
-                    phx-click="like_joke"
-                    phx-value-joke_id={joke.id}
-                ><Heroicons.LiveView.icon name="face-smile" type="outline" class={
-                    (if joke.has_liked,
-                        do: "h-5 w-5 text-green-800 ",
-                        else: "h-5 w-5 text-slate-500")
-                } /></button>
+            <div id={to_string(joke.id)} class="flex flex-col gap-2 bg-stone-100 text-stone-800 rounded-xl p-4">
+                <p><%= joke.text %></p>
+                <div class="flex gap-4">
+                    <div class="flex gap-1">
+                        <button 
+                            phx-click="like_joke"
+                            phx-value-joke_id={joke.id}
+                        ><Heroicons.LiveView.icon name="face-smile" type="outline" class={
+                            (if joke.has_liked,
+                                do: "h-5 w-5 text-green-600 ",
+                                else: "h-5 w-5 text-slate-500")
+                        } /></button>
+                        <div class="text-stone-600"><%= joke.likes %></div>
+                    </div>
+                    <div class="flex gap-1">
+                        <button 
+                            phx-click="dislike_joke"
+                            phx-value-joke_id={joke.id}
+                        ><Heroicons.LiveView.icon name="face-frown" type="outline" class={
+                            (if joke.has_disliked,
+                                do: "h-5 w-5 text-green-600 ",
+                                else: "h-5 w-5 text-slate-500")
+                        } /></button>
+                        <div class="text-stone-600"><%= joke.dislikes %></div>
+                    </div>
+                </div>
             </div>
         <% end %>
     </div>
