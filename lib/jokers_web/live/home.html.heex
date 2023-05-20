@@ -21,7 +21,7 @@
                             phx-value-joke_id={joke.id}
                         ><Heroicons.LiveView.icon name="face-frown" type="outline" class={
                             (if joke.has_disliked,
-                                do: "h-5 w-5 text-green-600 ",
+                                do: "h-5 w-5 text-red-600 ",
                                 else: "h-5 w-5 text-slate-500")
                         } /></button>
                         <div class="text-stone-600"><%= joke.dislikes %></div>
