@@ -33,8 +33,14 @@ defmodule JokersWeb.Live.Home do
       joke.likes + 1
     end
 
-    {:ok, joke} = Jokers.Jokes.update_joke(joke, %{likes: likes })
-    state = %{joke: %{socket_joke | likes: joke.likes}, sender: self()}
+    dislikes = if (socket_joke.has_disliked) do
+      joke.dislikes - 1
+    else
+      joke.dislikes
+    end
+
+    {:ok, joke} = Jokers.Jokes.update_joke(joke, %{likes: likes, dislikes: dislikes })
+    state = %{joke: %{socket_joke | likes: joke.likes, dislikes: joke.dislikes }, sender: self()}
 
     JokersWeb.Endpoint.broadcast(socket.assigns.topic, "update_like", state)
 
@@ -55,9 +61,15 @@ defmodule JokersWeb.Live.Home do
       joke.dislikes + 1
     end
 
-    {:ok, joke} = Jokers.Jokes.update_joke(joke, %{dislikes: dislikes })
+    likes = if (socket_joke.has_liked) do
+      joke.likes - 1
+    else
+      joke.likes
+    end
+
+    {:ok, joke} = Jokers.Jokes.update_joke(joke, %{likes: likes, dislikes: dislikes })
     state = %{
-      joke: %{socket_joke | dislikes: joke.dislikes},
+      joke: %{socket_joke | likes: joke.likes, dislikes: joke.dislikes},
       sender: self()
     }
 
@@ -68,10 +80,15 @@ defmodule JokersWeb.Live.Home do
 
   def handle_info(%{topic: "jokes", event: "update_like", payload: %{joke: joke, sender: sender}}, socket) do
     joke = if (sender == self()) do
-      %{joke | has_liked: !joke.has_liked }
+      joke = %{joke | has_liked: !joke.has_liked}
+      if (joke.has_disliked) do
+        %{joke | has_disliked: false}
+      else
+        joke
+      end
     else
       [socket_joke | _rest ] = Enum.filter(socket.assigns.jokes, &(&1.id == joke.id))
-      %{joke | has_liked: socket_joke.has_liked }
+      %{joke | has_liked: socket_joke.has_liked, has_disliked: socket_joke.has_disliked }
     end
 
     joke_id = joke.id
@@ -88,10 +105,15 @@ defmodule JokersWeb.Live.Home do
 
   def handle_info(%{topic: "jokes", event: "update_dislike", payload: %{joke: joke, sender: sender}}, socket) do
     joke = if (sender == self()) do
-      %{joke | has_disliked: !joke.has_disliked }
+      joke = %{joke | has_disliked: !joke.has_disliked}
+      if (joke.has_disliked) do
+        %{joke | has_liked: false}
+      else
+        joke
+      end
     else
       [socket_joke | _rest ] = Enum.filter(socket.assigns.jokes, &(&1.id == joke.id))
-      %{joke | has_disliked: socket_joke.has_disliked }
+      %{joke | has_liked: socket_joke.has_liked, has_disliked: socket_joke.has_disliked }
     end
 
     joke_id = joke.id
